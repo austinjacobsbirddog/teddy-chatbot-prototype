@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teddy Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5; padding: 2rem; color: #333;
+    }
+    .container { max-width: 860px; margin: 0 auto; }
+    h1 { margin-bottom: 0.25rem; color: #00003A; font-size: 1.5rem; }
+    .subtitle { color: #888; margin-bottom: 1.5rem; font-size: 0.9rem; }
+    label { display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
+    input[type="password"] {
+      width: 280px; padding: 0.5rem 0.75rem; border: 1px solid #ccc;
+      border-radius: 6px; font-size: 0.95rem;
+    }
+    input[type="password"]:focus { outline: none; border-color: #00003A; }
+    textarea {
+      width: 100%; min-height: 520px; padding: 1rem;
+      font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
+      font-size: 0.82rem; line-height: 1.6;
+      border: 1px solid #ccc; border-radius: 6px; resize: vertical;
+      background: #fff;
+    }
+    textarea:focus { outline: none; border-color: #00003A; }
+    button {
+      padding: 0.55rem 1.25rem; border: none; border-radius: 6px;
+      font-size: 0.9rem; cursor: pointer; font-weight: 500;
+    }
+    button:active { transform: scale(0.98); }
+    .btn-primary { background: #00003A; color: white; }
+    .btn-primary:hover { background: #000060; }
+    .btn-danger { background: #d9534f; color: white; }
+    .btn-danger:hover { background: #c9302c; }
+    .btn-ghost { background: none; color: #666; border: 1px solid #ccc; }
+    .btn-ghost:hover { background: #f0f0f0; }
+    .status {
+      margin-top: 0.75rem; padding: 0.6rem 0.75rem; border-radius: 6px;
+      font-size: 0.85rem;
+    }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.error { background: #f8d7da; color: #721c24; }
+    .hidden { display: none; }
+    .button-row { margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+    .char-count { margin-left: auto; color: #999; font-size: 0.8rem; }
+    .login-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Teddy Admin</h1>
+    <p class="subtitle">Edit the system prompt. Changes take effect on the next conversation.</p>
+
+    <!-- Login -->
+    <div id="login-section">
+      <label for="password">Admin Password</label>
+      <div class="login-row">
+        <input type="password" id="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')login()" />
+        <button class="btn-primary" onclick="login()">Login</button>
+      </div>
+      <div id="login-error" class="status error hidden"></div>
+    </div>
+
+    <!-- Editor -->
+    <div id="editor-section" class="hidden">
+      <label for="prompt">System Prompt</label>
+      <textarea id="prompt" oninput="updateCharCount()"></textarea>
+      <div class="button-row">
+        <button class="btn-primary" onclick="savePrompt()">Save</button>
+        <button class="btn-danger" onclick="resetPrompt()">Reset to Default</button>
+        <span class="char-count" id="char-count"></span>
+      </div>
+      <div id="status" class="status hidden"></div>
+    </div>
+  </div>
+
+  <script>
+    let pw = '';
+    let defaultPrompt = '';
+
+    async function apiFetch(url, opts = {}) {
+      const res = await fetch(url, {
+        ...opts,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': pw,
+          ...(opts.headers || {}),
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    async function login() {
+      pw = document.getElementById('password').value;
+      const errEl = document.getElementById('login-error');
+      errEl.classList.add('hidden');
+
+      try {
+        const data = await apiFetch('/api/admin/prompt');
+        defaultPrompt = data.defaultPrompt;
+        document.getElementById('prompt').value = data.prompt;
+        updateCharCount();
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('editor-section').classList.remove('hidden');
+      } catch (err) {
+        pw = '';
+        errEl.textContent = err.message;
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    async function savePrompt() {
+      const statusEl = document.getElementById('status');
+      statusEl.classList.add('hidden');
+
+      try {
+        const data = await apiFetch('/api/admin/prompt', {
+          method: 'PUT',
+          body: JSON.stringify({ prompt: document.getElementById('prompt').value }),
+        });
+        statusEl.textContent = data.message;
+        statusEl.className = 'status success';
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.className = 'status error';
+      }
+    }
+
+    async function resetPrompt() {
+      if (!confirm('Reset to the default prompt? Your edits will be lost.')) return;
+      const statusEl = document.getElementById('status');
+      statusEl.classList.add('hidden');
+
+      try {
+        await apiFetch('/api/admin/prompt/reset', { method: 'POST' });
+        document.getElementById('prompt').value = defaultPrompt;
+        updateCharCount();
+        statusEl.textContent = 'Prompt reset to default.';
+        statusEl.className = 'status success';
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.className = 'status error';
+      }
+    }
+
+    function updateCharCount() {
+      const len = document.getElementById('prompt').value.length;
+      document.getElementById('char-count').textContent = len.toLocaleString() + ' characters';
+    }
+  </script>
+</body>
+</html>
