@@ -1,9 +1,14 @@
 const Anthropic = require('@anthropic-ai/sdk');
-const { getPrompt } = require('../server/promptStore');
+const SYSTEM_PROMPT = require('../server/systemPrompt');
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+let anthropic;
+try {
+  anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+} catch (e) {
+  console.error('Failed to init Anthropic client:', e.message);
+}
 
 module.exports = async (req, res) => {
   // CORS — allow BirdDog site and any other origin
@@ -15,6 +20,14 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
+  }
+
+  if (!anthropic) {
+    anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  }
+
   const { messages } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
@@ -25,7 +38,7 @@ module.exports = async (req, res) => {
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
-      system: getPrompt(),
+      system: SYSTEM_PROMPT,
       messages,
     });
 
@@ -46,7 +59,7 @@ module.exports = async (req, res) => {
 
     res.json({ message: cleanContent, action });
   } catch (error) {
-    console.error('Anthropic API error:', error);
-    res.status(500).json({ error: 'Failed to get response from AI' });
+    console.error('Anthropic API error:', error.message);
+    res.status(500).json({ error: 'Failed to get response from AI', detail: error.message });
   }
 };
