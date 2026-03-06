@@ -1,5 +1,8 @@
 const Anthropic = require('@anthropic-ai/sdk');
-const SYSTEM_PROMPT = require('../server/systemPrompt');
+const { kv } = require('@vercel/kv');
+const DEFAULT_PROMPT = require('../server/systemPrompt');
+
+const KV_KEY = 'teddy:system_prompt';
 
 let anthropic;
 try {
@@ -8,6 +11,15 @@ try {
   });
 } catch (e) {
   console.error('Failed to init Anthropic client:', e.message);
+}
+
+async function getPrompt() {
+  try {
+    const custom = await kv.get(KV_KEY);
+    return custom || DEFAULT_PROMPT;
+  } catch {
+    return DEFAULT_PROMPT;
+  }
 }
 
 module.exports = async (req, res) => {
@@ -38,7 +50,7 @@ module.exports = async (req, res) => {
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      system: await getPrompt(),
       messages,
     });
 

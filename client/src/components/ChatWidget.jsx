@@ -126,7 +126,7 @@ export default function ChatWidget() {
                 style={{ mixBlendMode: 'screen' }}
               />
               <button
-                onClick={() => window.open('/admin', '_blank')}
+                onClick={() => window.open('/admin.html', '_blank')}
                 className="text-white/40 hover:text-white transition-colors p-1 rounded"
                 title="Admin"
               >
