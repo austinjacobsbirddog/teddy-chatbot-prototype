@@ -8,10 +8,10 @@ export default function MessageBubble({ message }) {
       {/* Teddy avatar — TR caricature on Midnight circle */}
       {!isUser && (
         <div
-          className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center mt-0.5"
-          style={{ backgroundColor: '#00003A' }}
+          className="flex-shrink-0 rounded-full flex items-center justify-center mt-0.5"
+          style={{ backgroundColor: '#00003A', width: 38, height: 38 }}
         >
-          <TeddyIcon size={22} />
+          <TeddyIcon size={38} />
         </div>
       )}
 

@@ -92,10 +92,10 @@ export default function ChatWidget() {
             <div className="flex items-center gap-3">
               {/* Teddy Roosevelt avatar */}
               <div
-                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: HUNTER_ORANGE }}
+                className="rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: HUNTER_ORANGE, width: 56, height: 56 }}
               >
-                <TeddyIcon size={32} />
+                <TeddyIcon size={56} />
               </div>
               <div>
                 <div
@@ -181,10 +181,10 @@ export default function ChatWidget() {
         aria-label={isOpen ? 'Close chat' : 'Does my land qualify?'}
       >
         <div
-          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{ backgroundColor: HUNTER_ORANGE }}
+          className="rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: HUNTER_ORANGE, width: 49, height: 49 }}
         >
-          <TeddyIcon size={28} />
+          <TeddyIcon size={49} />
         </div>
         <span
           className="font-semibold text-sm whitespace-nowrap"
