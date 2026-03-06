@@ -4,10 +4,10 @@ export default function TypingIndicator() {
   return (
     <div className="flex items-start gap-2 mb-3">
       <div
-        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5"
+        className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center mt-0.5"
         style={{ backgroundColor: '#00003A' }}
       >
-        <TeddyIcon size={16} color="white" />
+        <TeddyIcon size={22} />
       </div>
       <div
         className="px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1"
