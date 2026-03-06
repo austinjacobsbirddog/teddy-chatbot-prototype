@@ -1,5 +1,15 @@
-const { kv } = require('@vercel/kv');
+const { Redis } = require('@upstash/redis');
 const DEFAULT_PROMPT = require('../../server/systemPrompt');
+
+let redis;
+try {
+  redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+} catch (e) {
+  console.error('Failed to init Redis client:', e.message);
+}
 
 const KV_KEY = 'teddy:system_prompt';
 
@@ -31,7 +41,7 @@ module.exports = async (req, res) => {
   // GET — fetch current prompt
   if (req.method === 'GET') {
     try {
-      const customPrompt = await kv.get(KV_KEY);
+      const customPrompt = await redis.get(KV_KEY);
       return res.json({
         prompt: customPrompt || DEFAULT_PROMPT,
         defaultPrompt: DEFAULT_PROMPT,
@@ -52,7 +62,7 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'prompt (string) is required' });
     }
     try {
-      await kv.set(KV_KEY, prompt);
+      await redis.set(KV_KEY, prompt);
       return res.json({ message: 'Prompt saved successfully.' });
     } catch (err) {
       console.error('KV set error:', err.message);
@@ -63,7 +73,7 @@ module.exports = async (req, res) => {
   // POST — reset to default
   if (req.method === 'POST') {
     try {
-      await kv.del(KV_KEY);
+      await redis.del(KV_KEY);
       return res.json({ message: 'Prompt reset to default.' });
     } catch (err) {
       console.error('KV del error:', err.message);

@@ -1,5 +1,5 @@
 const Anthropic = require('@anthropic-ai/sdk');
-const { kv } = require('@vercel/kv');
+const { Redis } = require('@upstash/redis');
 const DEFAULT_PROMPT = require('../server/systemPrompt');
 
 const KV_KEY = 'teddy:system_prompt';
@@ -13,9 +13,20 @@ try {
   console.error('Failed to init Anthropic client:', e.message);
 }
 
+let redis;
+try {
+  redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+} catch (e) {
+  console.error('Failed to init Redis client:', e.message);
+}
+
 async function getPrompt() {
   try {
-    const custom = await kv.get(KV_KEY);
+    if (!redis) return DEFAULT_PROMPT;
+    const custom = await redis.get(KV_KEY);
     return custom || DEFAULT_PROMPT;
   } catch {
     return DEFAULT_PROMPT;
