@@ -10,8 +10,11 @@ function requireAdmin(req, res) {
     return false;
   }
   const provided = req.headers['x-admin-password'];
-  if (!provided || provided !== adminPassword) {
-    res.status(401).json({ error: 'Invalid admin password' });
+  if (!provided || provided.trim() !== adminPassword.trim()) {
+    res.status(401).json({
+      error: 'Invalid admin password',
+      debug: { providedLen: provided ? provided.length : 0, expectedLen: adminPassword.length },
+    });
     return false;
   }
   return true;
